@@ -1,0 +1,9 @@
+
+'진짜 앱'처럼 보이게 하는 한 끗 (PWA 설정)
+폰에서 주소창 없이 꽉 찬 화면으로 게임을 즐기려면, index.html의 <head> 태그 안에 아래 코드를 넣어주세요.
+
+HTML
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>SNAKE BYTE Retro</title>

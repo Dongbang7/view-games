@@ -1,0 +1,251 @@
+<template>
+  <div class="game-wrapper">
+    <div class="game-header">
+      <div class="title">2048</div>
+      <div class="score-container">
+        <div class="score-box">SCORE<div>{{ score }}</div></div>
+        <div class="score-box">BEST<div>{{ bestScore }}</div></div>
+      </div>
+    </div>
+
+    <div class="game-intro">
+      <button @click="initGame" class="restart-button">New Game</button>
+    </div>
+
+    <div class="grid-container" @touchstart="handleTouchStart" @touchend="handleTouchEnd">
+      <div v-for="(row, rIdx) in grid" :key="'row-'+rIdx" class="grid-row">
+        <div v-for="(cell, cIdx) in row" :key="'cell-'+cIdx" 
+             class="tile" :class="'tile-' + cell">
+          <div v-if="cell !== 0" class="tile-inner">{{ cell }}</div>
+        </div>
+      </div>
+      
+      <div v-if="isGameOver" class="game-message">
+        <p>Game Over!</p>
+        <button @click="initGame">Try Again</button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted, onUnmounted } from 'vue';
+
+//--- 폰에서 조작용
+// 터치 시작 위치 저장을 위한 변수
+let touchStartX = 0;
+let touchStartY = 0;
+
+// 1. 터치 시작 (손가락을 화면에 댈 때)
+const handleTouchStart = (e: TouchEvent) => {
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+  // 스크롤 방지 (게임판 위에서 화면이 움직이지 않게)
+  e.preventDefault();
+};
+
+// 2. 터치 종료 (손가락을 화면에서 뗄 때)
+const handleTouchEnd = (e: TouchEvent) => {
+  const touchEndX = e.changedTouches[0].clientX;
+  const touchEndY = e.changedTouches[0].clientY;
+
+  const dx = touchEndX - touchStartX;
+  const dy = touchEndY - touchStartY;
+
+  // 최소 스와이프 거리 (너무 살짝 건드린 건 무시)
+  const absDx = Math.abs(dx);
+  const absDy = Math.abs(dy);
+
+  if (Math.max(absDx, absDy) > 30) {
+    // 수평 이동이 더 크면 좌우 이동
+    if (absDx > absDy) {
+      move(dx > 0 ? 'right' : 'left');
+    } 
+    // 수직 이동이 더 크면 상하 이동
+    else {
+      //move(dy > 0 ? 'down' : 'up');
+      move(dy > 0 ? 'up' : 'down');
+    }
+  }
+};
+//=== 폰
+
+// 상태 관리
+// 초기값도 4x4로 미리 채워주면 타입스크립트가 훨씬 안심합니다.
+//const grid = ref<number[][]>([]);
+const grid = ref<number[][]>(Array.from({ length: 4 }, () => Array(4).fill(0))); // 윗줄이나 이줄이나 같다.
+const score = ref(0);
+const bestScore = ref(Number(localStorage.getItem('2048-best')) || 0);
+const isGameOver = ref(false);
+
+// 1. 게임 시작 (숫자 2개 생성)
+const initGame = () => {
+  grid.value = Array.from({ length: 4 }, () => Array(4).fill(0));
+  score.value = 0;
+  isGameOver.value = false;
+  addRandomTile();
+  addRandomTile(); // 초기 숫자 2개 생성
+};
+
+// 2. 랜덤 위치에 2 또는 4 추가
+const addRandomTile = () => {
+  const emptyCells = [];
+  for (let r = 0; r < 4; r++) {
+    for (let c = 0; c < 4; c++) {
+      if (grid.value[r][c] === 0) emptyCells.push({ r, c });
+    }
+  }
+  if (emptyCells.length > 0) {
+    const { r, c } = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+    grid.value[r][c] = Math.random() < 0.9 ? 2 : 4;
+  }
+};
+
+// 3. 이동 및 합치기 로직
+const move = (direction: string) => {
+  if (isGameOver.value) return;
+  let moved = false;
+  let currentGrid = JSON.parse(JSON.stringify(grid.value));
+
+  const rotate = (matrix: number[][]) => matrix[0].map((_, i) => matrix.map(row => row[i]).reverse());
+  
+  // 방향에 따라 그리드 회전 (모든 로직을 '왼쪽 이동'으로 통일하기 위함)
+  let rotations = direction === 'left' ? 0 : direction === 'up' ? 1 : direction === 'right' ? 2 : 3;
+  for (let i = 0; i < rotations; i++) currentGrid = rotate(currentGrid);
+
+  for (let r = 0; r < 4; r++) {
+    let row = currentGrid[r].filter((v: number) => v !== 0);
+    for (let i = 0; i < row.length - 1; i++) {
+      if (row[i] === row[i + 1]) {
+        row[i] *= 2;
+        score.value += row[i];
+        row.splice(i + 1, 1);
+        moved = true;
+      }
+    }
+    while (row.length < 4) row.push(0);
+    if (JSON.stringify(currentGrid[r]) !== JSON.stringify(row)) moved = true;
+    currentGrid[r] = row;
+  }
+
+  // 다시 원래 방향으로 회전
+  for (let i = 0; i < (4 - rotations) % 4; i++) currentGrid = rotate(currentGrid);
+
+  if (moved) {
+    grid.value = currentGrid;
+    addRandomTile();
+    // 타일을 추가한 직후에 게임 오버인지 체크합니다.
+    checkGameOver();
+    // 베스트 스코어 갱신
+    if (score.value > bestScore.value) {
+      bestScore.value = score.value;
+      localStorage.setItem('2048-best', bestScore.value.toString());
+    }
+  }
+};
+
+// 게임 오버인지 체크.
+const checkGameOver = () => {
+  // 1. 빈 칸이 있는지 확인
+  for (let r = 0; r < 4; r++) {
+    for (let c = 0; c < 4; c++) {
+      if (grid.value[r][c] === 0) return; // 빈 칸이 있으면 아직 게임 중
+    }
+  }
+
+  // 2. 인접한 타일끼리 합칠 수 있는지 확인 (가로/세로)
+  for (let r = 0; r < 4; r++) {
+    for (let c = 0; c < 4; c++) {
+      const current = grid.value[r][c];
+      // 오른쪽 타일과 비교
+      if (c < 3 && current === grid.value[r][c + 1]) return;
+      // 아래쪽 타일과 비교
+      if (r < 3 && current === grid.value[r + 1][c]) return;
+    }
+  }
+
+  // 여기까지 왔다면 더 이상 움직일 곳이 없음!
+  isGameOver.value = true;
+};
+
+// 키보드/터치 이벤트 생략 (위 답변과 동일)
+const handleKeyDown = (e: KeyboardEvent) => {
+  if (e.key === 'ArrowLeft') move('left');
+  if (e.key === 'ArrowRight') move('right');
+  if (e.key === 'ArrowUp') move('down');
+  if (e.key === 'ArrowDown') move('up');
+};
+
+onMounted(() => {
+  initGame();
+  window.addEventListener('keydown', handleKeyDown);
+});
+</script>
+
+<style scoped>
+.game-wrapper { font-family: 'Clear Sans', Arial, sans-serif; display: flex; flex-direction: column; align-items: center; padding-top: 20px; }
+.game-header { width: 340px; display: flex; justify-content: space-between; align-items: center; }
+.title { font-size: 60px; font-weight: bold; color: #776e65; }
+.score-container { display: flex; gap: 5px; }
+.score-box { background: #bbada0; color: white; padding: 5px 15px; border-radius: 3px; text-align: center; font-weight: bold; }
+
+.grid-container { 
+  width: 340px; height: 340px; background: #bbada0; border-radius: 6px; padding: 10px; 
+  display: grid; grid-template-rows: repeat(4, 1fr); gap: 10px; position: relative;
+}
+.grid-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.tile { 
+  background: rgba(238, 228, 218, 0.35); border-radius: 3px; 
+  display: flex; justify-content: center; align-items: center; font-size: 25px; font-weight: bold;
+}
+
+/* 타일별 색상 (기획안: 숫자가 클수록 진해짐) */
+.tile-2 { background: #eee4da; color: #776e65; }
+.tile-4 { background: #ede0c8; color: #776e65; }
+.tile-8 { background: #f2b179; color: white; }
+.tile-16 { background: #f59563; color: white; }
+.tile-32 { background: #f67c5f; color: white; }
+.tile-64 { background: #f65e3b; color: white; }
+.tile-128 { background: #edcf72; color: white; font-size: 20px; }
+.tile-2048 { background: #edc22e; color: white; box-shadow: 0 0 30px 10px rgba(243, 215, 116, 0.23); }
+
+.restart-button {
+  background: #8f7a66; color: white; border: none; padding: 10px 20px; 
+  border-radius: 3px; cursor: pointer; font-weight: bold; margin-bottom: 20px;
+}
+/* 기존 스타일 아래에 추가 */
+.game-message {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(238, 228, 218, 0.73);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  z-index: 100;
+  animation: fadeIn 0.5s ease-in; 
+}
+
+.game-message p {
+  font-size: 40px;
+  font-weight: bold;
+  color: #776e65;
+  margin-bottom: 20px;
+}
+
+.game-message button {
+  background: #8f7a66;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 18px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+</style>

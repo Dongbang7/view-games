@@ -1,0 +1,428 @@
+<template>
+  <div class="tetris-wrapper">
+    <div class="tetris-header">
+      <div class="title">TETRIS</div>
+      <div class="score-container">
+        <div class="score-box">SCORE<div>{{ score }}</div></div>
+        <div class="score-box">BEST<div>{{ bestScore }}</div></div>
+      </div>
+    </div>
+
+    <div class="tetris-intro">
+      <button @click="initGame" class="restart-button">New Game</button>
+    </div>
+
+    <div class="board-container" 
+         @touchstart.prevent="handleTouchStart" 
+         @touchend.prevent="handleTouchEnd">
+      
+      <!-- <div v-for="(row, rIdx) in displayBoard" :key="'r-'+rIdx" class="board-row">
+        <div v-for="(cell, cIdx) in row" :key="'c-'+cIdx" 
+             class="cell" :class="cell !== 0 ? 'tile-' + cell : ''">
+        </div>
+      </div> -->
+      <div v-for="(row, rIdx) in displayBoard" :key="'r-'+rIdx" class="board-row">
+        <div v-for="(cell, cIdx) in row" :key="'c-'+cIdx" 
+            class="cell" 
+            :class="[
+            cell !== 0 ? 'tile-' + cell.toString().split('-')[0] : '', 
+            cell.toString().includes('destroy') ? 'tile-destroy' : ''
+        ]">
+        </div>
+      </div>
+
+      <div v-if="isGameOver" class="game-message">
+        <p>Game Over!</p>
+        <button @click="initGame">Try Again</button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted, onUnmounted, computed } from 'vue';
+
+const BOARD_WIDTH = 10;
+const BOARD_HEIGHT = 20;
+
+// 블록 모양 정의 (문자열 대신 숫자로 매핑하여 색상 처리 용이하게 변경)
+const SHAPES: Record<string, number[][]> = {
+  I: [[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]],
+  J: [[2,0,0],[2,2,2],[0,0,0]],
+  L: [[0,0,3],[3,3,3],[0,0,0]],
+  O: [[4,4],[4,4]],
+  S: [[0,5,5],[5,5,0],[0,0,0]],
+  T: [[0,6,0],[6,6,6],[0,0,0]],
+  Z: [[7,7,0],[0,7,7],[0,0,0]]
+};
+const TYPES = Object.keys(SHAPES);
+
+const board = ref<number[][]>(Array.from({ length: BOARD_HEIGHT }, () => Array(BOARD_WIDTH).fill(0)));
+const currentPiece = ref({ matrix: [[0]], row: 0, col: 0, type: '' });
+const score = ref(0);
+const bestScore = ref(Number(localStorage.getItem('tetris-best')) || 0);
+const isGameOver = ref(false);
+let gameInterval: any = null;
+
+// [핵심] 현재 움직이는 블록을 보드 데이터와 합쳐서 보여주는 계산된 속성
+const displayBoard = computed(() => {
+  const display = board.value.map(row => [...row]);
+  if (currentPiece.value && !isGameOver.value) {
+    const { matrix, row, col } = currentPiece.value;
+    matrix.forEach((r, y) => {
+      r.forEach((value, x) => {
+        if (value !== 0) {
+          const br = row + y;
+          const bc = col + x;
+          if (br >= 0 && br < BOARD_HEIGHT && bc >= 0 && bc < BOARD_WIDTH) {
+            display[br][bc] = value;
+          }
+        }
+      });
+    });
+  }
+  return display;
+});
+
+const spawnPiece = () => {
+  const type = TYPES[Math.floor(Math.random() * TYPES.length)];
+  const matrix = SHAPES[type];
+  currentPiece.value = {
+    type,
+    matrix: JSON.parse(JSON.stringify(matrix)),
+    row: 0,
+    col: Math.floor((BOARD_WIDTH - matrix[0].length) / 2)
+  };
+  if (checkCollision(currentPiece.value.row, currentPiece.value.col, currentPiece.value.matrix)) {
+    isGameOver.value = true;
+    clearInterval(gameInterval);
+  }
+};
+
+const checkCollision = (r: number, c: number, m: number[][]) => {
+  return m.some((row, y) => row.some((val, x) => {
+    if (val === 0) return false;
+    const br = r + y, bc = c + x;
+    return br >= BOARD_HEIGHT || bc < 0 || bc >= BOARD_WIDTH || (br >= 0 && board.value[br][bc] !== 0);
+  }));
+};
+
+/*
+const move = (dr: number, dc: number) => {
+  if (!checkCollision(currentPiece.value.row + dr, currentPiece.value.col + dc, currentPiece.value.matrix)) {
+    currentPiece.value.row += dr;
+    currentPiece.value.col += dc;
+    return true;
+  }
+  if (dr > 0) lockPiece();
+  return false;
+};
+*/
+
+const rotate = () => {
+  const m = currentPiece.value.matrix;
+  const rotated = m[0].map((_, i) => m.map(row => row[i]).reverse());
+  if (!checkCollision(currentPiece.value.row, currentPiece.value.col, rotated)) {
+    currentPiece.value.matrix = rotated;
+  }
+};
+
+/*
+const lockPiece = () => {
+  currentPiece.value.matrix.forEach((row, y) => {
+    row.forEach((val, x) => {
+      if (val !== 0) {
+        const br = currentPiece.value.row + y;
+        if (br >= 0) board.value[br][currentPiece.value.col + x] = val;
+      }
+    });
+  });
+  clearLines();
+  spawnPiece();
+};
+*/
+
+const lockPiece = () => {
+  // 1. 현재 블록의 모양(matrix)을 보드(board) 데이터에 '박제'합니다.
+  currentPiece.value.matrix.forEach((row, y) => {
+    row.forEach((val, x) => {
+      if (val !== 0) {
+        const br = currentPiece.value.row + y;
+        const bc = currentPiece.value.col + x;
+        // 보드 범위 안에 있을 때만 저장 (안전 장치)
+        if (br >= 0 && br < BOARD_HEIGHT && bc >= 0 && bc < BOARD_WIDTH) {
+          board.value[br][bc] = val; // 여기서 숫자가 박혀야 화면에 남습니다!
+        }
+      }
+    });
+  });
+
+  // 2. 줄이 꽉 찼는지 확인하고 지우기
+  clearLines();
+
+  // 3. 새 블록 소환
+  spawnPiece();
+};
+
+const move = (dr: number, dc: number) => {
+  if (isGameOver.value) return false;
+
+  const nextRow = currentPiece.value.row + dr;
+  const nextCol = currentPiece.value.col + dc;
+
+  // 다음 위치가 충돌인지 확인
+  if (!checkCollision(nextRow, nextCol, currentPiece.value.matrix)) {
+    currentPiece.value.row = nextRow;
+    currentPiece.value.col = nextCol;
+    return true;
+  } else {
+    // 만약 '아래'로 가려다가 부딪힌 거라면? 바닥이나 다른 블록에 닿은 것!
+    if (dr > 0) {
+      lockPiece(); // 여기서 반드시 lockPiece를 호출해야 블록이 바닥에 '착' 붙습니다.
+    }
+    return false;
+  }
+};
+
+/*
+const clearLines = () => {
+  let cleared = 0;
+  board.value = board.value.filter(row => {
+    const isFull = row.every(cell => cell !== 0);
+    if (isFull) cleared++;
+    return !isFull;
+  });
+  while (board.value.length < BOARD_HEIGHT) {
+    board.value.unshift(Array(BOARD_WIDTH).fill(0));
+  }
+  if (cleared > 0) score.value += cleared * 100;
+};
+*/
+/*
+const initGame = () => {
+  board.value = Array.from({ length: BOARD_HEIGHT }, () => Array(BOARD_WIDTH).fill(0));
+  score.value = 0;
+  isGameOver.value = false;
+  spawnPiece();
+  if (gameInterval) clearInterval(gameInterval);
+  gameInterval = setInterval(() => move(1, 0), 1000);
+};
+*/
+/*
+const initGame = () => {
+  // 1. [중요] 기존에 돌아가던 타이머가 있다면 확실히 죽입니다.
+  if (gameInterval) {
+    clearInterval(gameInterval);
+    gameInterval = null;
+  }
+
+  // 2. 보드 및 상태 초기화
+  board.value = Array.from({ length: BOARD_HEIGHT }, () => Array(BOARD_WIDTH).fill(0));
+  score.value = 0;
+  isGameOver.value = false;
+  
+  // 3. 첫 블록 생성
+  spawnPiece();
+  
+  // 4. 새 타이머 시작
+  gameInterval = setInterval(() => {
+    if (!isGameOver.value) {
+      move(1, 0);
+    }
+  }, 1000);
+};
+*/
+const initGame = () => {
+  // 1. [가장 중요] 기존에 돌던 타이머가 있다면 즉시 정지하고 비웁니다.
+  if (gameInterval) {
+    clearInterval(gameInterval);
+    gameInterval = null;
+  }
+
+  // 2. 게임 상태 완전히 초기화 (빌더의 폼 초기화와 같습니다)
+  isGameOver.value = false;
+  score.value = 0;
+  
+  // 3. 보드판을 깨끗한 빈 배열로 새로 만듭니다. (깊은 복사 효과)
+  board.value = Array.from({ length: BOARD_HEIGHT }, () => Array(BOARD_WIDTH).fill(0));
+  
+  // 4. 현재 조작 중인 블록 정보를 초기화합니다.
+  // 이 부분이 빠지면 이전 게임의 위치 정보가 새 게임에 영향을 줄 수 있습니다.
+  currentPiece.value = { 
+    matrix: [[0]], 
+    row: 0, 
+    col: 0, 
+    type: '' 
+  };
+
+  // 5. 첫 번째 블록을 생성합니다.
+  spawnPiece();
+
+  // 6. 새로운 타이머를 시작합니다.
+  gameInterval = setInterval(() => {
+    // 게임 오버가 아닐 때만 하강 로직을 수행합니다.
+    if (!isGameOver.value) {
+      move(1, 0);
+    }
+  }, 1000);
+};
+
+// 블록 이동 로직
+const movePiece = (dr: number, dc: number) => {
+  if (!currentPiece.value || isGameOver.value) return false;
+  const newRow = currentPiece.value.row + dr;
+  const newCol = currentPiece.value.col + dc;
+  
+  if (!checkCollision(newRow, newCol, currentPiece.value.matrix)) {
+    currentPiece.value.row = newRow;
+    currentPiece.value.col = newCol;
+    return true; // 이동 성공
+  }
+  return false; // 이동 실패 (충돌)
+};
+
+// 하드 드롭 (한 번에 바닥으로)
+const hardDrop = () => {
+  // 충돌할 때까지 아래로 계속 이동
+  while (!checkCollision(currentPiece.value.row + 1, currentPiece.value.col, currentPiece.value.matrix)) {
+    currentPiece.value.row++;
+  }
+  // 바닥에 닿았으니 고정!
+  lockPiece();
+};
+
+// 키보드 및 터치 이벤트 (이전과 동일하게 유지)
+const handleKeyDown = (e: KeyboardEvent) => {
+  if (isGameOver.value) return;
+  if (e.key === 'ArrowLeft') move(0, -1);
+  if (e.key === 'ArrowRight') move(0, 1);
+  if (e.key === 'ArrowDown') move(1, 0);
+  if (e.key === 'ArrowUp') rotate();
+  //if (e.key === ' ') hardDrop(); // 하드 드롭 (스페이스바)
+  // 스페이스바 (Hard Drop)
+  if (e.key === ' ') {
+    e.preventDefault(); // 브라우저 스크롤 방지
+    hardDrop();
+  }
+};
+
+// 줄 파괴 효과
+// clearLines 함수 수정 (파괴 효과 로직 추가)
+const clearLines = async () => { // async/await 사용
+  let cleared = 0;
+  const linesToClear: number[] = [];
+
+  // 1. 꽉 찬 줄 찾기
+  for (let r = BOARD_HEIGHT - 1; r >= 0; r--) {
+    if (board.value[r].every(cell => cell !== 0 && !cell.toString().includes('destroy'))) {
+      linesToClear.push(r);
+    }
+  }
+
+  if (linesToClear.length === 0) return; // 지울 줄 없으면 종료
+
+  // 2. [효과] 파괴 애니메이션 적용
+  linesToClear.forEach(r => {
+    board.value[r] = board.value[r].map(cell => {
+      // 기존 블록 숫자 뒤에 '-destroy' 문자열을 붙여서 클래스를 만듭니다.
+      return `${cell}-destroy`; 
+    });
+  });
+
+  // 3. [지연] 애니메이션이 나올 시간을 줍니다. (0.3초)
+  await new Promise(resolve => setTimeout(resolve, 300)); 
+
+  // 4. [실제 삭제] 애니메이션 후 데이터에서 삭제
+  board.value = board.value.filter((_, index) => !linesToClear.includes(index));
+
+  // 5. 새 빈 줄 추가 및 점수 계산
+  while (board.value.length < BOARD_HEIGHT) {
+    board.value.unshift(Array(BOARD_WIDTH).fill(0));
+  }
+  
+  cleared = linesToClear.length;
+  if (cleared > 0) score.value += cleared * 100;
+};
+
+/*
+onMounted(() => {
+  window.addEventListener('keydown', handleKeyDown);
+  initGame();
+});
+*/
+// 2. Lifecycle에서 관리 (빌더의 FormCreate / FormDestroy와 같습니다)
+onMounted(() => {
+  // 혹시 남아있을지 모를 리스너를 제거하고 새로 등록 (중복 방지 핵심!)
+  window.removeEventListener('keydown', handleKeyDown); 
+  window.addEventListener('keydown', handleKeyDown);
+  initGame();
+});
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeyDown);
+  if (gameInterval) clearInterval(gameInterval);
+});
+</script>
+
+<style scoped>
+/* 테트리스 전용 CSS 스타일 */
+
+.tetris-wrapper { font-family: 'Clear Sans', Arial, sans-serif; display: flex; flex-direction: column; align-items: center; padding-top: 20px; color: #333; }
+.tetris-header { width: 300px; display: flex; justify-content: space-between; align-items: center; }
+.title { font-size: 40px; font-weight: bold; color: #2c3e50; }
+.score-container { display: flex; gap: 5px; }
+.score-box { background: #34495e; color: white; padding: 5px 12px; border-radius: 3px; text-align: center; font-weight: bold; font-size: 14px; }
+.score-box div { font-size: 20px; }
+
+.board-container { 
+  width: 274px; height: 544px; /* (25*10 + 2*11) x (25*20 + 2*21) */
+  background: #2c3e50; border: 2px solid #34495e; border-radius: 6px; padding: 2px; 
+  display: grid; grid-template-rows: repeat(20, 1fr); gap: 2px; position: relative;
+  overflow: hidden; /* 블록 스폰 시 보드 밖 안 보이게 */
+}
+.board-row, .piece-row { display: grid; grid-template-columns: repeat(10, 1fr); gap: 2px; }
+.cell { 
+  width: 25px; height: 25px; background: rgba(236, 240, 241, 0.05); border-radius: 2px; 
+}
+.cell.occupied { border: 1px solid rgba(0,0,0,0.2); box-shadow: inset 0 0 5px rgba(255,255,255,0.1); }
+.tetris-wrapper { display: flex; flex-direction: column; align-items: center; padding: 20px; background: #f0f0f0; min-height: 100vh; }
+.board-container { 
+  display: grid; grid-template-rows: repeat(20, 1fr); gap: 1px; 
+  background: #333; padding: 5px; border: 4px solid #222; border-radius: 4px;
+}
+.board-row { display: grid; grid-template-columns: repeat(10, 1fr); gap: 1px; }
+.cell { width: 25px; height: 25px; background: #444; border-radius: 2px; }
+
+/* 숫자별 블록 색상 매핑 */
+.tile-1 { background: #00f0f0; box-shadow: inset 0 0 8px #fff; } /* I */
+.tile-2 { background: #0000f0; box-shadow: inset 0 0 8px #fff; } /* J */
+.tile-3 { background: #f0a000; box-shadow: inset 0 0 8px #fff; } /* L */
+.tile-4 { background: #f0f000; box-shadow: inset 0 0 8px #fff; } /* O */
+.tile-5 { background: #00f000; box-shadow: inset 0 0 8px #fff; } /* S */
+.tile-6 { background: #a000f0; box-shadow: inset 0 0 8px #fff; } /* T */
+.tile-7 { background: #f00000; box-shadow: inset 0 0 8px #fff; } /* Z */
+
+.game-message { position: absolute; background: rgba(0,0,0,0.8); color: white; padding: 20px; text-align: center; }
+
+/* 💡 파괴 효과 애니메이션 (핵심) */
+.tile-destroy {
+  animation: blockDestroy 0.3s ease-out forwards;
+  /* 애니메이션 중에는 테두리가 살짝 빛나게 */
+  box-shadow: 0 0 15px #fff;
+}
+
+@keyframes blockDestroy {
+  0% { 
+    transform: scale(1); 
+    opacity: 1; 
+  }
+  50% { 
+    transform: scale(1.1); /* 살짝 커지면서 빛남 */
+    opacity: 0.8;
+  }
+  100% { 
+    transform: scale(0.5) rotate(45deg); /* 작아지고 회전하며 사라짐 */
+    opacity: 0;
+  }
+}
+</style>

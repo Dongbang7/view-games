@@ -1,0 +1,11 @@
+{
+  "name": "유리의 레트로 게임즈",
+  "short_name": "유리게임",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#101010",
+  "theme_color": "#00ff00",
+  "icons": [
+    { "src": "icon-192.168.png", "sizes": "192x192", "type": "image/png" }
+  ]
+}

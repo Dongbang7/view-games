@@ -1,0 +1,39 @@
+import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
+import { VitePWA } from 'vite-plugin-pwa'
+
+export default defineConfig({
+  plugins: [
+    vue(),
+    VitePWA({
+      registerType: 'autoUpdate', // 서비스 워커 자동 업데이트
+      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
+      manifest: {
+        name: 'Yuri Games', // 전체 이름
+        short_name: 'Yuri Game',      // 아이콘 아래 표시될 짧은 이름
+        description: 'TypeScript 기반 웹앱 게임',
+        theme_color: '#000000',    // 상단 바 색상 (검정색 테트리스 테마)
+        icons: [
+          {
+            src: 'pwa-192x192.png', // public 폴더에 해당 크기의 아이콘이 있어야 함
+            sizes: '192x192',
+            type: 'image/png'
+          },
+          {
+            src: 'pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png'
+          },
+          {
+            src: 'pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any maskable' // 안드로이드 아이콘 최적화
+          }
+        ],
+        display: 'standalone',      // 브라우저 주소창 없이 앱처럼 실행
+        orientation: 'portrait'    // 세로 모드 고정 (테트리스에 적합)
+      }
+    })
+  ]
+})
