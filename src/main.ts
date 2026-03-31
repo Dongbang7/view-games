@@ -15,4 +15,6 @@ const app = createApp(App)
 app.use(createPinia())
 app.use(router)
 
+console.log(`START: ${import.meta.env.VITE_USER_NAME}`); // OK 유리
+
 app.mount('#app')

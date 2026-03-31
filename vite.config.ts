@@ -17,8 +17,9 @@ export default defineConfig({
         short_name: 'Yuri Game',
         description: 'TypeScript 기반 웹앱 게임',
         theme_color: '#000000',
-        display: 'standalone',
-        orientation: 'portrait',
+        display: 'fullscreen',   // 홤면에 꽉차게. 폰에서는 상단 시계 등도 안보이게.
+        //display: 'standalone',   // <--- 브라우저 UI(주소창 등)만 제거 (일반적인 앱 느낌)
+        orientation: 'portrait', // 세로 모드 고정
         icons: [
           {
             src: 'pwa-192x192.png',

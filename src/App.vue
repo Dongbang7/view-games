@@ -48,7 +48,7 @@ window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   deferredPrompt = e;
   // 여기서 [설치하기] 버튼을 화면에 보이게 처리하면 됩니다!
-  
+
 });
 
 // 이걸 쓰려면 :activePage="currentPage" 를 template에 넣어야 한다.
@@ -72,6 +72,16 @@ const updateTime = () => {
     hour12: true
   });
 };
+
+// PC 브라우저에서 사용자가 리사이즈하는 것을 감지해서 강제로 원래 크기로 돌려놓는 '꼼수'는 있지만, 사용자 경험에 좋지 않아 추천하지 않습
+// 주의: 이 방식은 대부분의 현대 브라우저에서 차단되거나, 사용자 허가가 필요하며 제대로 작동하지 않을 확률이 높습니다.)
+// App.vue의 mounted 훅 등에서 실행
+window.addEventListener('resize', () => {
+  // 원하는 크기 (예: 400x600)로 강제 고정
+  if (window.innerWidth !== 400 || window.innerHeight !== 600) {
+    window.resizeTo(400, 600); 
+  }
+});
 
 let timer: number | undefined;
 
