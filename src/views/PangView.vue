@@ -7,7 +7,7 @@
             <div class="score-value">{{ score.toLocaleString() }}</div>
         </div>
         <div class="game-info">
-            <div class="timer-display" :class="{ 'low-time': timeLeft <= 10 }">
+            <div class="timer-display" :class="{ 'low-time': timeLeft <= 15 }">
                 TIME: {{ timeLeft }}s 
             </div>
             <transition name="bounce">
@@ -55,7 +55,7 @@
       <button style="padding: 3px 20px;" @click="startGame">Restart</button>
     </div>
     <div>
-        (C) SoftInterior, 2026.3
+        (C) Soft-Interior, 2026.3
     </div>
   </div>
 </template>
@@ -67,6 +67,17 @@ import { ref, computed, watch, onMounted, onUnmounted } from 'vue'; // computed 
 import { useXPang } from '../composables/useXPang';
 import { useXPangSwipe } from '../composables/useXPangSwipe';
 
+// 전역 객체 사용하기.
+import { useGameStore } from '@/stores/game'
+import { storeToRefs } from 'pinia'
+const gameStore = useGameStore()
+// 주의: state나 getters를 구조 분해 할당할 때는 storeToRefs를 써야 반응성(실시간 업데이트)이 유지됩니다.
+const { Score, playerName, doubleScore } = storeToRefs(gameStore)
+const hitEnemy = () => {
+  // action은 그냥 호출하면 됩니다.
+  gameStore.addScore(10)
+}
+//------------
 
 const { board, BOARD_SIZE, selectedAddr, initBoard, checkMatches, handleBrickClick, processMatch, 
         combo, score, startGame, endGame, timeLeft, isGameActive,

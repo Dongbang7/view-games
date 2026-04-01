@@ -133,7 +133,7 @@ body {
   position:absolute; /* top: 60px; left: 15px; right: 15px; */
   top: 50px;          /* 헤더 바로 아래 여유 공간 */
   /*right: 20%;        /* 화면 오른쪽에 붙여서 배치 (빌더의 Align 비슷) */
-  color: #f7e9e9;
+  color: #e6d7d7;
 
   /* 가로 크기를 부모 컨테이너의 1/3로 설정 */
   width: 350px;      
@@ -154,7 +154,7 @@ body {
 }
 
 .location { font-size: 20px; color: #f7e9e9; margin-bottom: 5px; }
-.temp-main { font-size: 30px; font-weight: bold; color: #333; }
+.temp-main { font-size: 30px; font-weight: bold; color: #e7e3e3; }
 .desc { font-size: 20px; color: #4a90e2; font-weight: bold; margin-bottom: 15px; }
 
 .divider { border: 0; border-top: 1px solid #f0f0f0; margin: 15px 0; }
@@ -169,7 +169,7 @@ body {
 
 .grid-item { display: flex; flex-direction: column; }
 .label { font-size: 14px; color: #999; margin-bottom: 2px; }
-.value { font-size: 18px; font-weight: 600; color: #444; }
+.value { font-size: 18px; font-weight: 600; color: #c5c4c4; }
 
 .close-btn {
   margin-top: 20px; width: 50%; padding: 12px; 
@@ -190,6 +190,7 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 1px;
+  color: rgb(190, 184, 184);
 }
 
 .compass-svg {
@@ -199,14 +200,14 @@ body {
 
 .compass-circle {
   fill: none;
-  stroke: #333; /* 테두리 색상 */
+  stroke: #d3d3d3; /* 테두리 색상 */
   stroke-width: 2;
 }
 
 .direction-text {
   font-size: 12px;
   font-weight: bold;
-  fill: #555; /* 글자 색상 */
+  fill: #dfdede; /* 글자 색상 */
 }
 
 /* 화살표 스타일 */
@@ -231,7 +232,7 @@ body {
 
 .wind-text {
   font-size: 14px;
-  color: #666;
+  color: #e0dede;
 }
 </style>
 

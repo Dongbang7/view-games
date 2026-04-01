@@ -372,7 +372,7 @@ onMounted(initGame);
     display: flex;
     align-items: center;
     margin: 5px;
-    color: rgb(157, 149, 226);
+    color: rgb(83, 71, 194);
     font-size: 14px;
 }
 /* [추가] 상단 UI 바 스타일 */
@@ -437,21 +437,23 @@ onMounted(initGame);
   align-items: center;
   gap: 20px;
   padding: 1px;
-  background-color: #f0f0f0;
+  background-color: #6b6868;
   border-bottom: 1px solid #ccc;
 }
 
 .up-down-input {
   display: inline-flex;
-  border: 1px solid #999;
-  background: white;
+  border: 1px solid #6b6868;
+  background: rgb(119, 118, 118);
 }
 
 .up-down-input input {
   width: 50px;
   border: none;
   text-align: center;
+  color : white;
   outline: none;
+  background: rgb(131, 131, 131);
 }
 
 /* 숫자 입력창 기본 화살표 숨기기 */
