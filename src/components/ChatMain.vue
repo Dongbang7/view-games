@@ -28,8 +28,9 @@ interface ChatMessage {
 }
 
 const messages = ref<ChatMessage[]>([
-  { sender: 'AI 가이드', text: '안녕하세요 유리님! 이제 분리된 컴포넌트입니다.', isMe: false, time: '오전 10:00' },
-  { sender: '유리', text: '파일을 나누니까 코드가 훨씬 깨끗하네요!', isMe: true, time: '오전 10:01' },
+  { sender: '가이드', text: '안녕하세요! 카톡 같은 깨톡을 만들어 봅시다.', isMe: false, time: '1' },
+  { sender: '포교 지원 앱', text: '인터넷 전쟁에서 이겨야 대세를 돌립니다.', isMe: true, time: '2' },
+  { sender: '지원 기기', text: '모든 종류의 PC, 모바일, 태블릿 등에서 사용 가능합니다.', isMe: true, time: '3' },
 ])
 
 const chatMain = ref<HTMLElement | null>(null)

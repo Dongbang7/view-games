@@ -2,9 +2,9 @@
   <div class="app-container">
     <header class="kakao-header">
       <div class="header-right">
-        <router-link to="/" @click="currentPage = 'home'" class="nav-link">채팅홈</router-link>
-        <router-link to="/page1" @click="currentPage = 'Page1'" class="nav-link">P1</router-link>
-        <router-link to="/page2" @click="currentPage = 'Page2'" class="nav-link">P2</router-link>
+        <router-link to="/" @click="currentPage = 'home'" class="nav-link">깨톡</router-link>
+        <!-- <router-link to="/page1" @click="currentPage = 'Page1'" class="nav-link">P1</router-link>
+        <router-link to="/page2" @click="currentPage = 'Page2'" class="nav-link">P2</router-link> -->
         <router-link to="/game2048" @click="currentPage = 'game2048'" class="nav-link">2048</router-link>
         <router-link to="/gameTetris" @click="currentPage = 'gameTetris'" class="nav-link">Tetris</router-link>
         <router-link to="/gameMine" @click="currentPage = 'gameMine'" class="nav-link">Mine</router-link>
@@ -156,6 +156,13 @@ const callChildWeather = () => {
 
   background-color: rgba(56, 51, 51, 0.98);
   background-blend-mode: overlay; 
+}
+.tab-item {
+  margin-right: 2px;
+  text-decoration: none;
+  color: #d4d0d0;
+  background-color: #3d19df;
+  font-size: 13px;
 }
 
 /* 헤더 스타일 */
