@@ -7,7 +7,7 @@
         <div class="text-box">{{ msg.text }}</div>
         <div class="time">{{ msg.time }}</div>
       </div>
-    </div>
+    </div> 
 
     <div class="input-area">
       <input v-model="inputText" @keyup.enter="sendMessage" placeholder="메시지를 입력하세요..." />
@@ -28,7 +28,7 @@ interface ChatMessage {
 }
 
 const messages = ref<ChatMessage[]>([
-  { sender: '가이드', text: '안녕하세요! 카톡 같은 깨톡을 만들어 봅시다.', isMe: false, time: '1' },
+  { sender: '가이드 v1.1', text: '안녕하세요! 카톡 같은 깨톡을 만들어 봅시다.', isMe: false, time: '1' },
   { sender: '포교 지원 앱', text: '인터넷 전쟁에서 이겨야 대세를 돌립니다.', isMe: true, time: '2' },
   { sender: '지원 기기', text: '모든 종류의 PC, 모바일, 태블릿 등에서 사용 가능합니다.', isMe: true, time: '3' },
 ])
@@ -61,7 +61,9 @@ const sendMessage = () => {
 
 <style scoped>
 /* 기존 App.vue에 있던 채팅창 관련 CSS만 이쪽으로 옮겨옵니다 */
-.chat-main-area { flex: 1; overflow-y: auto; padding: 20px; background: #b2c7da; }
+.chat-main-area { 
+  flex: 1; overflow-y: auto; padding: 20px; background: #b2c7da; 
+}
 .nav-link {
   margin-right: 15px;
   text-decoration: none;
@@ -74,7 +76,7 @@ const sendMessage = () => {
   display: flex;
   flex-direction: column;
   overflow-y: auto; padding: 20px; background: #111111; 
-  height: 100vh;
+  height: 90vh;
   max-width: 500px; /* 모바일 사이즈 고정 */
   margin: 0 auto;
   /*background-color: #abc1d1; /* 카톡 배경색 */

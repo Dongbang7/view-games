@@ -52,9 +52,9 @@
 
     <div class="controls">
       <br>
-      <button style="padding: 3px 20px;" @click="startGame">Restart</button>
+      <button style="padding: 3px 20px; color: white; background-color: gray;" @click="startGame">Restart</button>
     </div>
-    <div>
+    <div style="color: white;">
         (C) Soft-Interior, 2026.3
     </div>
   </div>
@@ -341,9 +341,9 @@ onUnmounted(() => {
 .score-label { font-size: 14px; color: #aaa; }
 .score-value { font-size: 20px; font-weight: bold; font-family: 'Courier New', Courier, monospace; }
 .combo-badge {
-  color: #ffcc00;
+  color: #f8f410;
   font-weight: bold;
-  font-size: 15px;
+  font-size: 16px;
   margin-top: 1px;
 }
 .timer-display {
@@ -486,7 +486,7 @@ onUnmounted(() => {
   position: absolute;
   top: 50; left: 0;
   width: 73%; height: 50%;
-  background: rgba(0,0,0,0.2);
+  background: rgba(0,0,0, 0.1);
   display: flex;
   justify-content: center;
   align-items: center;

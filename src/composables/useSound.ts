@@ -3,7 +3,7 @@
 export const useSound = () => {
   // 사운드 파일 경로 (public 폴더에 넣어두세요)
   const pangSound = new Audio(`${import.meta.env.BASE_URL}sounds/pang.mp3`);
-  const bombSound = new Audio(`${import.meta.env.BASE_URL}sounds/bomb.mp3`);
+  const bombSound = new Audio(`${import.meta.env.BASE_URL}sounds/boom.mp3`);
   const comboSound = new Audio(`${import.meta.env.BASE_URL}sounds/combo.mp3`);
   pangSound.volume = 0.1;
   bombSound.volume = 0.1;

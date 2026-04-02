@@ -437,7 +437,7 @@ onMounted(initGame);
   align-items: center;
   gap: 20px;
   padding: 1px;
-  background-color: #6b6868;
+  background-color: #818080;
   border-bottom: 1px solid #ccc;
 }
 

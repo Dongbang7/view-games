@@ -10,7 +10,7 @@
         <router-link to="/gameMine" @click="currentPage = 'gameMine'" class="nav-link">Mine</router-link>
         <router-link to="/gameBlock" @click="currentPage = 'gameBlock'" class="nav-link">Bricks</router-link>
         <router-link to="/gameDragon" @click="currentPage = 'gameDragon'" class="nav-link">Dragon</router-link>
-        <router-link to="/gamePang" @click="currentPage = 'gamePang'"  class="nav-link">xPang</router-link>
+        <router-link to="/gamePang" @click="currentPage = 'gamePang'"  class="nav-link">PangPang</router-link>
         <button @click="callChildWeather" class="tab-item">날씨</button>
       </div>
     </header>
@@ -118,6 +118,16 @@ const callChildWeather = () => {
   --nav-text: #ffffff;
 }
 
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  /* 핵심: 페이지 끝에서 튕기는 효과를 방지 */
+  overscroll-behavior: none;
+}
+
 .nav-menu {
   background-color: var(--nav-bg);
   color: var(--nav-text);
@@ -132,7 +142,7 @@ const callChildWeather = () => {
 }
 
 .nav-link {
-  margin-right: 2px;
+  margin-right: 0px;
   text-decoration: none;
   color: #f0ecec;
   font-size: 13px;

@@ -6,7 +6,7 @@
         <div class="score-box">BEST<div>{{ bestScore }}</div></div>
       </div>
     <div class="next-container">
-      <div class="next-label">NEXT</div>
+      <!-- <div class="next-label">NEXT</div> -->
       <div class="next-preview">
         <div v-for="(row, rIdx) in nextPiece.matrix" :key="'nr-'+rIdx" class="next-row">
             <div v-for="(cell, cIdx) in row" :key="'nc-'+cIdx" 
@@ -944,8 +944,8 @@ onUnmounted(() => {
 }*/
 .next-preview {
   /* 셀 크기 15px + 간격 1px 기준, 4x4 블록이 들어갈 넉넉한 공간 */
-  width: 65px; 
-  height: 65px;
+  width: 60px; 
+  height: 60px;
   display: flex;
   flex-direction: column;
   justify-content: center; /* 수직 중앙 정렬 */

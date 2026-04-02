@@ -6,7 +6,7 @@
 </div> -->
   <div class="game-container">
     <div class="score-board">
-      DongBang >> SCORE: {{ String(score).padStart(4, '0') }}
+      동방 DragonByte : {{ String(score).padStart(4, '0') }}
     </div>
 
     <canvas ref="canvasRef" width="400" height="400"></canvas>
@@ -23,6 +23,8 @@ import { ref, onMounted, onUnmounted } from 'vue';
 
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 let ctx: CanvasRenderingContext2D | null = null;
+
+// 1: '🍎', 2: '🍇', 3: '🍊', 4: '🍌', 5: '🍓', 99: '💣'
 
 const stages = [
   { level: 1, speed: 12, walls: [] }, // 평화로운 시작
@@ -59,7 +61,13 @@ const tileCount = 20; // 가로세로 칸 수
 const initialSpeed = 9; // 숫자가 낮을수록 빠름 (프레임 스킵 기준)
 
 // 상태 변수
-let snake = [{ x: 9, y: 18 }]; // 뱀 몸통 좌표 배열
+interface TSnake {
+  x: number;
+  y: number;
+};
+
+let snakeStart: TSnake = { x: 9, y: 18 };
+let snake: TSnake[] = [snakeStart]; // [snakeStart, snakeStart, snakeStart]; // 뱀 몸통 좌표 배열
 let food = { x: 5, y: 5, isGolden: false };
 let dx = 0; // 수평 방향 속도 (1, -1, 0)
 let dy = 0; // 수직 방향 속도 (1, -1, 0)
@@ -77,6 +85,33 @@ const setupLevel = (lv: number) => {
   dx = 0; dy = 0;
   createFood();
 };
+
+// 사운드 객체 생성 (컴포넌트 상단에 한 번만 선언)
+// public/sounds/pop.mp3 경로에 파일이 있다고 가정합니다.
+const combineSound = new Audio(`${import.meta.env.BASE_URL}sounds/tik.mp3`);
+const getSound = new Audio(`${import.meta.env.BASE_URL}sounds/pop.mp3`);
+
+// 사운드 재생 함수
+const playGetSound = () => {
+  // 재생 중일 때 다시 호출되면 처음부터 다시 재생 (연속 합치기 대응)
+  combineSound.currentTime = 0; 
+  combineSound.volume = 0.2;
+  combineSound.play().catch(e => {
+    // 브라우저 정책상 첫 상호작용 전에는 재생이 차단될 수 있음
+    console.log("사운드 재생 차단됨1:", e);
+  });
+};
+
+const playCombineSound = () => {
+  // 재생 중일 때 다시 호출되면 처음부터 다시 재생 (연속 합치기 대응)
+  getSound.currentTime = 0; 
+  getSound.volume = 0.2;
+  getSound.play().catch(e => {
+    // 브라우저 정책상 첫 상호작용 전에는 재생이 차단될 수 있음
+    console.log("사운드 재생 차단됨2:", e);
+  });
+};
+
 
 // 음식 생성 (뱀 몸통 피해서)
 /*
@@ -105,21 +140,20 @@ const createFood = () => {
   }
   food = newFood!;
 };
-// 키보드 방향키 제어
-const handleKeyDown = (e: KeyboardEvent) => {
-  if (!isPlaying.value) {
-    if (e.key == ' ')
-        isPlaying.value = true;
-    return;
-  }
-  
-  switch (e.key) {
-    case "ArrowUp": if (dy !== 1) { dx = 0; dy = -1; } break;
-    case "ArrowDown": if (dy !== -1) { dx = 0; dy = 1; } break;
-    case "ArrowLeft": if (dx !== 1) { dx = -1; dy = 0; } break;
-    case "ArrowRight": if (dx !== -1) { dx = 1; dy = 0; } break;
-  }
-};
+
+const init = () => {
+   // 상태 초기화
+  //snake = [{ x: 10, y: 10 }];
+  snake = [snakeStart, snakeStart, snakeStart];
+  dx = 0; 
+  dy = 0;
+  score.value = 0;
+  isPlaying.value = false; // 여기서 false가 되면 draw 함수 상단 조건에 걸림
+  createFood(); // 음식 위치도 초기화
+}
+
+
+// 초당 60회 그려짐
 
 const draw = () => {
   if (!ctx || !canvasRef.value) return;
@@ -183,10 +217,15 @@ const draw = () => {
       score.value += food.isGolden ? 50 : 10;
       applesEaten++;
 
+      if (food.isGolden)
+        playCombineSound();
+      else
+        playGetSound();
+
       // [핵심] 진동 추가! 
       // 50ms 동안 짧게 징~ 하고 울립니다.
       if ("vibrate" in navigator) {
-          navigator.vibrate(10); 
+          navigator.vibrate(1); 
       }
 
       // 10개 먹을 때마다 다음 스테이지로!
@@ -236,17 +275,23 @@ const draw = () => {
     ctx.shadowBlur = 15; // 황금 사과 광채 효과
     ctx.shadowColor = "#ffd700";
   }
-  ctx.fillRect(food.x * gridSize, food.y * gridSize, gridSize - 2, gridSize - 2);
+  //ctx.fillRect(food.x * gridSize, food.y * gridSize, gridSize - 2, gridSize - 2);
+  ctx.font = "19px 'Courier New'";
+  ctx.fillText(food.isGolden ? '🍊' : '🍎', food.x * gridSize + gridSize/2, food.y * gridSize + gridSize - gridSize /4);
   ctx.shadowBlur = 0; // 초기화
 
   // [그리기] 뱀
   snake.forEach((s, i) => {
     ctx!.fillStyle = i === 0 ? "#00ff00" : "#00aa00";
+    if (i === 0) {
+      //ctx.fillText('😎', s.x * gridSize + gridSize/2, s.y * gridSize + gridSize - gridSize /4); // food.x * gridSize + gridSize/2, food.y * gridSize + gridSize - gridSize /4);
+    } 
     ctx!.fillRect(s.x * gridSize, s.y * gridSize, gridSize - 2, gridSize - 2);
   });
 
   requestAnimationFrame(draw);
 };
+
 
 const gameOver = () => {
   // 200ms 동안 묵직하게 진동
@@ -255,14 +300,7 @@ const gameOver = () => {
 //   }
   //alert(`GAME OVER! SCORE: ${score.value}`);
   
-  // 상태 초기화
-  snake = [{ x: 10, y: 10 }];
-  dx = 0; 
-  dy = 0;
-  score.value = 0;
-  isPlaying.value = false; // 여기서 false가 되면 draw 함수 상단 조건에 걸림
-  createFood(); // 음식 위치도 초기화
-
+  init();
   requestAnimationFrame(draw);
 };
 /*
@@ -274,6 +312,25 @@ const gameOver = () => {
   isPlaying.value = false;
 };
 */
+
+// 키보드 방향키 제어
+const handleKeyDown = (e: KeyboardEvent) => {
+  if (!isPlaying.value) {
+    if (e.key == ' ') {
+        init();
+        isPlaying.value = true;
+    }
+    return;
+  }
+  
+  switch (e.key) {
+    case "ArrowUp": if (dy !== 1) { dx = 0; dy = -1; } break;
+    case "ArrowDown": if (dy !== -1) { dx = 0; dy = 1; } break;
+    case "ArrowLeft": if (dx !== 1) { dx = -1; dy = 0; } break;
+    case "ArrowRight": if (dx !== -1) { dx = 1; dy = 0; } break;
+  }
+};
+
 // 터치 좌표 저장용
 let touchStartX = 0;
 let touchStartY = 0;
@@ -292,10 +349,11 @@ const handleTouchMove = (e: TouchEvent) => {
 
 const handleTouchEnd = (e: TouchEvent) => {
   if (!isPlaying.value) {
+    init();
     // 뱀이 가만히 있으면 심심하니까 처음엔 오른쪽(dx=1)으로 출발시킬게요.
     if (dx === 0 && dy === 0) {
-      dx = 1; 
-      dy = 0;
+      dx = 0; 
+      dy = -1;
     }
     isPlaying.value = true;
     return;
@@ -382,7 +440,7 @@ canvas {
 /* 스코어보드: 8비트 폰트 느낌 */
 .score-board {
   font-family: 'Courier New', Courier, monospace;
-  font-size: 24px;
+  font-size: 18px;
   color: #00ff00; /* 클래식 그린 */
   text-shadow: 0 0 10px #00ff00;
   margin-bottom: 15px;
