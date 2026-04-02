@@ -1,0 +1,1 @@
+import{_ as a,o,c as t,a as e}from"./index-CUTEEs1e.js";const n={},l={class:"about"};function r(c,s){return o(),t("div",l,[...s[0]||(s[0]=[e("h1",null,"This is an about page",-1),e("br",null,null,-1),e("h2",null,"This is an about page",-1)])])}const i=a(n,[["render",r]]);export{i as default};
